@@ -156,11 +156,27 @@ class QLearner(object):
     # q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='q_func')
     # Older versions of TensorFlow may require using "VARIABLES" instead of "GLOBAL_VARIABLES"
     # Tip: use huber_loss (from dqn_utils) instead of squared error when defining self.total_error
-    ######
+    
+    self.Q_vals = q_func(obs_t_float, self.num_actions, 'q_func', reuse = tf.AUTO_REUSE)
 
-    # YOUR CODE HERE
+    q_func_ph = tf.gather_nd(self.Q_vals, tf.stack([tf.range(tf.shape(self.Q_vals)[0]), self.act_t_ph], axis=1))
 
-    ######
+    
+    target_q_ph = q_func(obs_tp1_float, self.num_actions, 'target_q_func', reuse = tf.AUTO_REUSE)
+
+    if double_q:
+      target_index = tf.math.argmax(q_func(obs_tp1_float, self.num_actions, 'q_func', reuse = tf.AUTO_REUSE), axis = 1)
+      target_v_ph = tf.gather_nd(target_q_ph, target_index, axis = 1)
+    else:
+      target_v_ph = tf.math.reduce_max(target_q_ph, axis = 1)
+
+    backup_ph = self.rew_t_ph + (1 - self.done_mask_ph) * (gamma * target_v_ph)
+
+    self.total_error = tf.math.reduce_mean(huber_loss(q_func_ph - backup_ph))
+
+    q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='q_func')
+    target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_q_func')
+
 
     # construct optimization op (with gradient clipping)
     self.learning_rate = tf.placeholder(tf.float32, (), name="learning_rate")
@@ -226,9 +242,31 @@ class QLearner(object):
     # may not yet have been initialized (but of course, the first step
     # might as well be random, since you haven't trained your net...)
 
-    #####
+    idx = self.replay_buffer.store_frame(self.last_obs)
+    obs = self.replay_buffer.encode_recent_observation()
+    
+    #checking if q_func was initialized
+    if not self.model_initialized:
+      ac = np.random.randint(self.num_actions)
+    else:
+      #Choosing eps-greedy action
+      eps = self.exploration.value(self.t)
+      if np.random.uniform() < eps: 
+        ac = np.random.randint(self.num_actions)
+      else:
+        Q_vals = self.session.run(self.Q_vals, {self.obs_t_ph : obs[None]})
+        ac = np.argmax(Q_vals)
 
-    # YOUR CODE HERE
+    obs_tp1, rew, done, _ = self.env.step(ac)
+    self.replay_buffer.store_effect(idx, ac, rew, done)
+
+    if done:
+      obs_tp1 = self.env.reset()
+
+    self.last_obs = obs_tp1
+
+
+    
 
   def update_model(self):
     ### 3. Perform experience replay and train the network.
@@ -271,9 +309,21 @@ class QLearner(object):
       # self.session.run(self.update_target_fn)
       # you should update every target_update_freq steps, and you may find the
       # variable self.num_param_updates useful for this (it was initialized to 0)
-      #####
+      
+      obs_batch, act_batch, rew_batch, obs_tp1_batch, done_mask = self.replay_buffer.sample(self.batch_size)
 
-      # YOUR CODE HERE
+      if not self.model_initialized:
+        initialize_interdependent_variables(self.session, tf.global_variables(),
+                                            {self.obs_t_ph : obs_batch, self.obs_tp1_ph : obs_tp1_batch})
+        self.model_initialized = True
+    
+      self.session.run(self.train_fn, {self.obs_t_ph: obs_batch, self.act_t_ph: act_batch, self.rew_t_ph: rew_batch,
+                                       self.obs_tp1_ph: obs_tp1_batch, self.done_mask_ph: done_mask,
+                                       self.learning_rate : self.optimizer_spec.lr_schedule.value(self.t)})
+
+   
+      if self.num_param_updates % self.target_update_freq == 0:
+        self.session.run(self.update_target_fn)
 
       self.num_param_updates += 1
 
@@ -297,7 +347,8 @@ class QLearner(object):
       print("learning_rate %f" % self.optimizer_spec.lr_schedule.value(self.t))
       if self.start_time is not None:
         print("running time %f" % ((time.time() - self.start_time) / 60.))
-
+      obs_batch, act_batch, rew_batch, obs_tp1_batch, done_mask = self.replay_buffer.sample(1000)
+      
       self.start_time = time.time()
 
       sys.stdout.flush()
