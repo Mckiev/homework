@@ -165,8 +165,8 @@ class QLearner(object):
     target_q_ph = q_func(obs_tp1_float, self.num_actions, 'target_q_func', reuse = tf.AUTO_REUSE)
 
     if double_q:
-      target_index = tf.math.argmax(q_func(obs_tp1_float, self.num_actions, 'q_func', reuse = tf.AUTO_REUSE), axis = 1)
-      target_v_ph = tf.gather_nd(target_q_ph, target_index)
+      target_index = tf.math.argmax(q_func(obs_tp1_float, self.num_actions, 'q_func', reuse = tf.AUTO_REUSE), axis = 1, output_type = tf.int32)
+      target_v_ph = tf.gather_nd(target_q_ph, tf.stack([tf.range(tf.shape(self.Q_vals)[0]), target_index], axis=1))
     else:
       target_v_ph = tf.math.reduce_max(target_q_ph, axis = 1)
 
