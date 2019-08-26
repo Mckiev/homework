@@ -288,8 +288,8 @@ class Agent(object):
                                     n_layers=self.n_layers,
                                     size=self.size))
             self.sy_target_n = tf.placeholder(shape=[None], name="baseline_target", dtype=tf.float32)
-            self.baseline_loss = tf.losses.mean_squared_error(self.sy_target_n, self.baseline_prediction)
-            self.baseline_update_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.baseline_loss)
+            baseline_loss = tf.losses.mean_squared_error(self.sy_target_n, self.baseline_prediction)
+            self.baseline_update_op = tf.train.AdamOptimizer(self.learning_rate).minimize(baseline_loss)
 
     def sample_trajectories(self, itr, env):
         # Collect paths until we have enough timesteps
@@ -454,8 +454,11 @@ class Agent(object):
             # (mean and std) of the current batch of Q-values. (Goes with Hint
             # #bl2 in Agent.update_parameters.
         
-            b_n = self.sess.run(self.baseline_prediction, {self.sy_ob_no : ob_no}) * np.std(q_n) + np.mean(q_n)
+            b_n_pred = self.sess.run(self.baseline_prediction, {self.sy_ob_no : ob_no})
+            b_n = b_n_pred * np.std(q_n) + np.mean(q_n)
+            # print(q_n[:5], b_n_pred[:5])
             adv_n = q_n - b_n
+
         else:
             adv_n = q_n.copy()
         return adv_n
@@ -525,7 +528,7 @@ class Agent(object):
             # Agent.compute_advantage.)
 
             
-            target_n = (q_n - np.mean(q_n)) / np.std(q_n)
+            target_n = (q_n - np.mean(q_n)) / (np.std(q_n) + 10**(-8))
            # print(self.sess.run(self.baseline_loss, {self.sy_ob_no : ob_no, self.sy_target_n : target_n}))
             self.sess.run(self.baseline_update_op, {self.sy_ob_no : ob_no, self.sy_target_n : target_n})
          

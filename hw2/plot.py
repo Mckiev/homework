@@ -48,13 +48,13 @@ the --legend flag and then provide a title for each logdir.
 
 """
 
-def plot_data(data, value="AverageReturn"):
+def plot_data(data, value="AverageReturn", hue = "Experiment" ):
     if isinstance(data, list):
         data = pd.concat(data, ignore_index=True)
 
     sns.set(style="darkgrid")
-    sns.lineplot(data=data, x="Iteration", y=value, hue="Experiment")
-    plt.legend(loc='best', title= None).set_draggable()
+    sns.lineplot(data=data, x="Iteration", y=value, hue= hue)
+    plt.legend(loc='best', title= None).set_draggable(True)
     plt.show()
 
 
@@ -68,12 +68,24 @@ def get_datasets(fpath, condition=None):
             exp_name = params['exp_name']
             
             log_path = os.path.join(root,'log.txt')
-            experiment_data = pd.read_table(log_path)
+            experiment_data = pd.read_csv(log_path, sep='\t')
      
             experiment_data.insert(
                 len(experiment_data.columns),
                 'Experiment',
                 condition or exp_name
+                )
+
+            experiment_data.insert(
+                len(experiment_data.columns),
+                'lr',
+                'lr'+str(params['learning_rate'])
+                )
+
+            experiment_data.insert(
+                len(experiment_data.columns),
+                'b',
+                'b' + str(params['min_timesteps_per_batch'])
                 )
 
             datasets.append(experiment_data)
@@ -88,6 +100,7 @@ def main():
     parser.add_argument('logdir', nargs='*')
     parser.add_argument('--legend', nargs='*')
     parser.add_argument('--value', default='AverageReturn', nargs='*')
+    parser.add_argument('--hue', default='Experiment')
     args = parser.parse_args()
 
     use_legend = False
@@ -109,7 +122,7 @@ def main():
     else:
         values = [args.value]
     for value in values:
-        plot_data(data, value=value)
+        plot_data(data, value=value, hue = args.hue)
 
 if __name__ == "__main__":
     main()
