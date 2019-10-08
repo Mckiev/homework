@@ -331,6 +331,7 @@ class QLearner(object):
 
   def log_progress(self):
     episode_rewards = get_wrapper_by_name(self.env, "Monitor").get_episode_rewards()
+    episode_lengths = get_wrapper_by_name(self.env, "Monitor").get_episode_lengths()
 
     if len(episode_rewards) > 0:
       self.mean_episode_reward = np.mean(episode_rewards[-100:])
@@ -354,7 +355,7 @@ class QLearner(object):
       sys.stdout.flush()
 
       with open(self.rew_file, 'wb') as f:
-        pickle.dump(episode_rewards, f, pickle.HIGHEST_PROTOCOL)
+        pickle.dump((episode_rewards, episode_lengths), f, pickle.HIGHEST_PROTOCOL)
 
 def learn(*args, **kwargs):
   alg = QLearner(*args, **kwargs)
