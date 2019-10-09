@@ -15,6 +15,7 @@ import tensorflow_probability as tfp
 import pdb
 import warnings
 from tensorflow.python import debug as tf_debug
+
 warnings.filterwarnings('ignore')
 
 #============================================================================================#
@@ -221,13 +222,22 @@ class Agent(object):
         
         if self.discrete:
             sy_logits_na = policy_parameters
-            sy_logprob_n = tf.math.log(10**(-8) + tf.gather_nd(tf.nn.softmax(logits=sy_logits_na),
+            sy_logprob_n = tf.math.log(1e-8 + tf.gather_nd(tf.nn.softmax(logits=sy_logits_na),
                                         tf.stack([tf.range(tf.shape(sy_logits_na)[0]), sy_ac_na], axis=1)))
+
+            sy_neg_logprob_n = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                labels=sy_ac_na, 
+                logits=sy_logits_na
+            )
+
         else:
             sy_mean, sy_logstd = policy_parameters
             mvn = tfp.distributions.MultivariateNormalDiag(loc = sy_mean, scale_diag= tf.math.exp(sy_logstd))
-            sy_logprob_n = tf.math.log(10**(-8) + mvn.prob(sy_ac_na))
-            
+            sy_logprob_n =mvn.log_prob(sy_ac_na)
+
+            sy = (sy_ac_na - sy_mean) / tf.exp(sy_logstd)
+            sy_neg_logprob_n = 0.5 * tf.reduce_sum(sy * sy, axis=1)
+
 
         return sy_logprob_n
 
@@ -288,8 +298,8 @@ class Agent(object):
                                     n_layers=self.n_layers,
                                     size=self.size))
             self.sy_target_n = tf.placeholder(shape=[None], name="baseline_target", dtype=tf.float32)
-            baseline_loss = tf.losses.mean_squared_error(self.sy_target_n, self.baseline_prediction)
-            self.baseline_update_op = tf.train.AdamOptimizer(self.learning_rate).minimize(baseline_loss)
+            self.baseline_loss = tf.losses.mean_squared_error(self.sy_target_n, self.baseline_prediction)
+            self.baseline_update_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.baseline_loss)
 
     def sample_trajectories(self, itr, env):
         # Collect paths until we have enough timesteps
@@ -316,15 +326,14 @@ class Agent(object):
             #====================================================================================#
             #                           ----------PROBLEM 3----------
             #====================================================================================#
-            p,ac = self.sess.run((self.policy_parameters,self.sy_sampled_ac), {self.sy_ob_no : ob[None,:]})
+            ac = self.sess.run(self.sy_sampled_ac, {self.sy_ob_no : ob[None,:]})
             
             if self.discrete:
                 ac = ac[0].item()
             else:
                 ac = ac[0]
-                ac = np.clip(ac,  env.action_space.low, env.action_space.high)
+                #ac = np.clip(ac,  env.action_space.low, env.action_space.high)
 
-            
             acs.append(ac)
             ob, rew, done, _ = env.step(ac)
             rewards.append(rew)
@@ -492,7 +501,7 @@ class Agent(object):
             # On the next line, implement a trick which is known empirically to reduce variance
             # in policy gradient methods: normalize adv_n to have mean zero and std=1.
 
-            adv_n = (adv_n - np.mean(adv_n))/(np.std(adv_n) + 10**(-8))
+            adv_n = (adv_n - np.mean(adv_n))/(np.std(adv_n) + 1e-8)
         return q_n, adv_n
 
     def update_parameters(self, ob_no, ac_na, q_n, adv_n):
@@ -528,10 +537,9 @@ class Agent(object):
             # Agent.compute_advantage.)
 
             
-            target_n = (q_n - np.mean(q_n)) / (np.std(q_n) + 10**(-8))
-           # print(self.sess.run(self.baseline_loss, {self.sy_ob_no : ob_no, self.sy_target_n : target_n}))
+            target_n = (q_n - np.mean(q_n)) / (np.std(q_n) + 1e-8)
             self.sess.run(self.baseline_update_op, {self.sy_ob_no : ob_no, self.sy_target_n : target_n})
-         
+            
         #====================================================================================#
         #                           ----------PROBLEM 3----------
         # Performing the Policy Update
@@ -542,10 +550,11 @@ class Agent(object):
         # 
         # For debug purposes, you may wish to save the value of the loss function before
         # and after an update, and then log them below. 
-       # print(self.sess.run(self.loss, {self.sy_ob_no : ob_no,self.sy_ac_na : ac_na, self.sy_adv_n : adv_n}))
 
-        self.sess.run(self.update_op, {self.sy_ob_no : ob_no,self.sy_ac_na : ac_na, self.sy_adv_n : adv_n})
-      #  print(self.sess.run(self.loss, {self.sy_ob_no : ob_no,self.sy_ac_na : ac_na, self.sy_adv_n : adv_n}))
+        # print(self.sess.run(self.loss, {self.sy_ob_no : ob_no,self.sy_ac_na : ac_na, self.sy_adv_n : adv_n}))
+        p, _ = self.sess.run((self.sy_logprob_n,self.update_op), {self.sy_ob_no : ob_no,self.sy_ac_na : ac_na, self.sy_adv_n : adv_n})
+        #print(p[:5])
+        # print(self.sess.run(self.loss, {self.sy_ob_no : ob_no,self.sy_ac_na : ac_na, self.sy_adv_n : adv_n}))
         
         
 
@@ -670,6 +679,7 @@ def train_PG(
 def main():
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('env_name', type=str)
