@@ -1,8 +1,8 @@
 gym==0.10.5
 gym[atari]
-box2d
+Box2d-py
 mujoco-py==1.50.1.56
-tensorflow==1.10
+tensorflow==1.14
 numpy
 seaborn
 opencv-python
