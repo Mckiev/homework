@@ -28,6 +28,22 @@ def atari_model(img_in, num_actions, scope, reuse=False):
 
         return out
 
+def atari_model_small(img_in, num_actions, scope, reuse=False):
+    # 
+    with tf.variable_scope(scope, reuse=reuse):
+        out = img_in
+        with tf.variable_scope("convnet"):
+            # original architecture
+            out = layers.convolution2d(out, num_outputs=32, kernel_size=8, stride=4, activation_fn=tf.nn.relu)
+            out = layers.convolution2d(out, num_outputs=64, kernel_size=3, stride=1, activation_fn=tf.nn.relu)
+        out = layers.flatten(out)
+        with tf.variable_scope("action_value"):
+            out = layers.fully_connected(out, num_outputs=512,         activation_fn=tf.nn.relu)
+            out = layers.fully_connected(out, num_outputs=num_actions, activation_fn=None)
+
+        return out
+
+
 def atari_learn(env,
                 session,
                 num_timesteps):
@@ -37,8 +53,8 @@ def atari_learn(env,
     lr_multiplier = 1.0
     lr_schedule = PiecewiseSchedule([
                                          (0,                   1e-4 * lr_multiplier),
-                                         (num_iterations / 10, 1e-4 * lr_multiplier),
-                                         (num_iterations / 2,  5e-5 * lr_multiplier),
+                                         (num_timesteps / 10, 1e-4 * lr_multiplier),
+                                         (num_timesteps / 2,  5e-5 * lr_multiplier),
                                     ],
                                     outside_value=5e-5 * lr_multiplier)
     optimizer = dqn.OptimizerSpec(
@@ -56,7 +72,7 @@ def atari_learn(env,
         [
             (0, 1.0),
             (1e6, 0.1),
-            (num_iterations / 2, 0.01),
+            (num_timesteps / 2, 0.01),
         ], outside_value=0.01
     )
 
@@ -76,7 +92,7 @@ def atari_learn(env,
         target_update_freq=10000,
         grad_norm_clipping=10,
         double_q=True,
-        rew_file = 'Atari.pkl'
+        rew_file = 'res/Atari_def.pkl'
     )
     env.close()
 
@@ -125,7 +141,7 @@ def main():
     print('random seed = %d' % seed)
     env = get_env(task, seed)
     session = get_session()
-    atari_learn(env, session, num_timesteps=2e8)
+    atari_learn(env, session, num_timesteps=6e6)
 
 if __name__ == "__main__":
     main()
