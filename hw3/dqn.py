@@ -340,7 +340,7 @@ class QLearner(object):
       self.best_mean_episode_reward = max(self.best_mean_episode_reward, self.mean_episode_reward)
 
     if self.t % self.log_every_n_steps == 0 and self.model_initialized:
-      print("Timestep %d" % (self.t,))
+      print("Timestep %d, total length %d" % (self.t, np.sum(episode_lengths)))
       print("mean reward (100 episodes) %f" % self.mean_episode_reward)
       print("best mean reward %f" % self.best_mean_episode_reward)
       print("episodes %d" % len(episode_rewards))
