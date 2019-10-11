@@ -53,8 +53,8 @@ def atari_learn(env,
     lr_multiplier = 1.0
     lr_schedule = PiecewiseSchedule([
                                          (0,                   1e-4 * lr_multiplier),
-                                         (num_timesteps / 10, 1e-4 * lr_multiplier),
-                                         (num_timesteps / 2,  5e-5 * lr_multiplier),
+                                         (num_iterations / 10, 1e-4 * lr_multiplier),
+                                         (num_iterations / 2,  5e-5 * lr_multiplier),
                                     ],
                                     outside_value=5e-5 * lr_multiplier)
     optimizer = dqn.OptimizerSpec(
@@ -72,7 +72,7 @@ def atari_learn(env,
         [
             (0, 1.0),
             (1e6, 0.1),
-            (num_timesteps / 2, 0.01),
+            (num_iterations / 2, 0.01),
         ], outside_value=0.01
     )
 
@@ -141,7 +141,7 @@ def main():
     print('random seed = %d' % seed)
     env = get_env(task, seed)
     session = get_session()
-    atari_learn(env, session, num_timesteps=6e6)
+    atari_learn(env, session, num_timesteps=2e7)
 
 if __name__ == "__main__":
     main()

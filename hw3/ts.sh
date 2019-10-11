@@ -1,0 +1,2 @@
+python3 run_dqn_atari.py
+python3 run_dqn_atari_small.py
