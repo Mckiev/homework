@@ -13,13 +13,16 @@ from atari_wrappers import *
 
 
 
-def atari_model_fc(img_in, num_actions, scope, reuse=False):
+def atari_model_vsmall(img_in, num_actions, scope, reuse=False):
     # 
     with tf.variable_scope(scope, reuse=reuse):
         out = img_in
+        with tf.variable_scope("convnet"):
+            # original architecture
+            out = layers.convolution2d(out, num_outputs=8, kernel_size=8, stride=4, activation_fn=tf.nn.relu)
         out = layers.flatten(out)
         with tf.variable_scope("action_value"):
-            out = layers.fully_connected(out, num_outputs=512,         activation_fn=tf.nn.relu)
+            out = layers.fully_connected(out, num_outputs=64,         activation_fn=tf.nn.relu)
             out = layers.fully_connected(out, num_outputs=num_actions, activation_fn=None)
 
         return out
@@ -59,7 +62,7 @@ def atari_learn(env,
 
     dqn.learn(
         env=env,
-        q_func=atari_model_fc,
+        q_func=atari_model_vsmall,
         optimizer_spec=optimizer,
         session=session,
         exploration=exploration_schedule,
@@ -73,7 +76,7 @@ def atari_learn(env,
         target_update_freq=10000,
         grad_norm_clipping=10,
         double_q=True,
-        rew_file = 'res/Atari_fc.pkl'
+        rew_file = 'res/Atari_vsmall.pkl'
     )
     env.close()
 
