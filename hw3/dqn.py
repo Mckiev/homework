@@ -376,7 +376,6 @@ class QLearner(object):
       logz.log_tabular("MeanEpisodeReward", self.mean_episode_reward)
       logz.log_tabular("MaxMeanReturn", self.best_mean_episode_reward)
       logz.dump_tabular()
-      logz.pickle_tf_vars()
 
       
 
