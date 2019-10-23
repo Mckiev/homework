@@ -1,4 +1,5 @@
 import uuid
+import os, inspect
 import time
 import pickle
 import sys
@@ -10,10 +11,22 @@ import tensorflow                as tf
 import tensorflow.contrib.layers as layers
 from collections import namedtuple
 from dqn_utils import *
+import logz
 
 OptimizerSpec = namedtuple("OptimizerSpec", ["constructor", "kwargs", "lr_schedule"])
 
+def setup_logger(logdir, locals_):
+  # Configure output directory for logging
+  logz.configure_output_dir(logdir)
+  # Log experimental parameters
+  args = inspect.getargspec(QLearner)[0]
+  params = {k: str(locals_[k]) if k in locals_ else None for k in args}
+  params['exp_name'] = locals_['q_func'].__name__
+  logz.save_params(params)
+
 class QLearner(object):
+
+
 
   def __init__(
     self,
@@ -32,6 +45,7 @@ class QLearner(object):
     target_update_freq=10000,
     grad_norm_clipping=10,
     rew_file=None,
+    logdir = 'res',
     double_q=True,
     lander=False):
     """Run Deep Q-learning algorithm.
@@ -99,7 +113,9 @@ class QLearner(object):
     self.env = env
     self.session = session
     self.exploration = exploration
-    self.rew_file = str(uuid.uuid4()) + '.pkl' if rew_file is None else rew_file
+    self.rew_file = os.path.join(logdir,'data_dump.pkl') if rew_file is None else rew_file
+
+    setup_logger(logdir, locals())
 
     ###############
     # BUILD MODEL #
@@ -205,8 +221,9 @@ class QLearner(object):
     self.last_obs = self.env.reset()
     self.log_every_n_steps = 10000
 
-    self.start_time = None
+    self.start_time = time.time()
     self.t = 0
+
 
   def stopping_criterion_met(self):
     return self.stopping_criterion is not None and self.stopping_criterion(self.env, self.t)
@@ -347,15 +364,21 @@ class QLearner(object):
       print("exploration %f" % self.exploration.value(self.t))
       print("learning_rate %f" % self.optimizer_spec.lr_schedule.value(self.t))
       if self.start_time is not None:
-        print("running time %f" % ((time.time() - self.start_time) / 60.))
-      obs_batch, act_batch, rew_batch, obs_tp1_batch, done_mask = self.replay_buffer.sample(1000)
-      
-      self.start_time = time.time()
-
+        print("toral running time %f" % ((time.time() - self.start_time) / 60.))
       sys.stdout.flush()
 
       with open(self.rew_file, 'wb') as f:
         pickle.dump((episode_rewards, episode_lengths), f, pickle.HIGHEST_PROTOCOL)
+
+
+      logz.log_tabular("TotalTime", time.time() - self.start_time)
+      logz.log_tabular("Timestep", self.t)
+      logz.log_tabular("MeanEpisodeReward", self.mean_episode_reward)
+      logz.log_tabular("MaxMeanReturn", self.best_mean_episode_reward)
+      logz.dump_tabular()
+      logz.pickle_tf_vars()
+
+      
 
 def learn(*args, **kwargs):
   alg = QLearner(*args, **kwargs)
