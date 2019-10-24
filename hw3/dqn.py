@@ -336,7 +336,8 @@ class QLearner(object):
     
       self.session.run(self.train_fn, {self.obs_t_ph: obs_batch, self.act_t_ph: act_batch, self.rew_t_ph: rew_batch,
                                        self.obs_tp1_ph: obs_tp1_batch, self.done_mask_ph: done_mask,
-                                       self.learning_rate : self.optimizer_spec.lr_schedule.value(self.t)})
+                                       self.learning_rate : self.optimizer_spec.lr_schedule.value(self.t)},
+                                      options=tf.RunOptions(report_tensor_allocations_upon_oom=True))
 
    
       if self.num_param_updates % self.target_update_freq == 0:
