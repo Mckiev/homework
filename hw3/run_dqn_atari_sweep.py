@@ -115,7 +115,7 @@ def atari_learn(env,
         rewards = get_wrapper_by_name(env, "Monitor").get_episode_rewards()
         return np.mean(rewards[-100:]) > 20 or get_wrapper_by_name(env, "Monitor").get_total_steps() >= 4*num_timesteps
 
-    exploration_schedule = PiecewiseScheducd -le(
+    exploration_schedule = PiecewiseSchedule(
         [
             (0, 1.0),
             (1e6, 0.1),
