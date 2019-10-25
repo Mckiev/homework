@@ -81,7 +81,7 @@ def atari_model_1c(img_in, num_actions, scope, reuse=False):
         out = img_in
         with tf.variable_scope("convnet"):
             # original architecture
-            out = layers.convolution2d(out, num_outputs=64, kernel_size=3, stride=1, activation_fn=tf.nn.relu)
+            out = layers.convolution2d(out, num_outputs=32, kernel_size=8, stride=4, activation_fn=tf.nn.relu)
         out = layers.flatten(out)
         with tf.variable_scope("action_value"):
             out = layers.fully_connected(out, num_outputs=512,         activation_fn=tf.nn.relu)
@@ -94,7 +94,7 @@ def atari_learn(env,
                 session,
                 num_timesteps, model, double_q, logdir):
     # This is just a rough estimate
-    num_iterations = float(num_timesteps) / 4.0
+    num_iterations = float(num_timesteps)
 
     lr_multiplier = 1.0
     lr_schedule = PiecewiseSchedule([
@@ -113,9 +113,9 @@ def atari_learn(env,
         # notice that here t is the number of steps of the wrapped env,
         # which is different from the number of steps in the underlying env
         rewards = get_wrapper_by_name(env, "Monitor").get_episode_rewards()
-        return np.mean(rewards[-100:]) > 20 or get_wrapper_by_name(env, "Monitor").get_total_steps() >= num_timesteps
+        return np.mean(rewards[-100:]) > 20 or get_wrapper_by_name(env, "Monitor").get_total_steps() >= 4*num_timesteps
 
-    exploration_schedule = PiecewiseSchedule(
+    exploration_schedule = PiecewiseScheducd -le(
         [
             (0, 1.0),
             (1e6, 0.1),
@@ -196,7 +196,7 @@ def main():
     
     env = get_env(task, seed)
     session = get_session()
-    atari_learn(env, session, num_timesteps=2e7, model = args.model, logdir = logdir, double_q = args.doubleQ )
+    atari_learn(env, session, num_timesteps=5e6, model = args.model, logdir = logdir, double_q = args.doubleQ )
 
 if __name__ == "__main__":
     main()
