@@ -142,14 +142,14 @@ class ModelBasedPolicy(object):
                                             minval=self._action_space_low, maxval=self._action_space_high)
         states = self._dynamics_func(start_states, first_acs, True)
         costs = self._cost_fn(start_states, first_acs, states)
-        print(costs)
+        
         for _ in range(self._horizon - 1):
             random_acs = tf.random.uniform((self._num_random_action_selection, self._action_dim),
                                             minval=self._action_space_low, maxval=self._action_space_high)
             next_states = self._dynamics_func(states, random_acs, True)
             costs += self._cost_fn(states, random_acs, next_states)
 
-        best_action = first_acs[tf.math.argmax(costs)]
+        best_action = first_acs[tf.math.argmin(costs)]
         
 
         return best_action
@@ -163,7 +163,7 @@ class ModelBasedPolicy(object):
         tf_config = tf.ConfigProto()
         tf_config.gpu_options.allow_growth = True
         sess = tf.Session(config=tf_config)
-        
+
         sess = tf.Session()
 
         state_ph, action_ph, next_state_ph = self._setup_placeholders()
