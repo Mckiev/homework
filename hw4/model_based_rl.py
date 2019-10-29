@@ -67,6 +67,7 @@ class ModelBasedRL(object):
 
                 state = next_state
                 t += 1
+                
 
         return dataset
 
@@ -83,9 +84,11 @@ class ModelBasedRL(object):
         timeit.start('train policy')
 
         losses = []
-        ### PROBLEM 1
-        ### YOUR CODE HERE
-        raise NotImplementedError
+
+        for _ in range(self._training_epochs):
+            for (states, actions, next_states, _, _) in dataset.random_iterator(self._training_batch_size):
+                loss = self._policy.train_step(states, actions, next_states)
+                losses.append(loss)
 
         logger.record_tabular('TrainingLossStart', losses[0])
         logger.record_tabular('TrainingLossFinal', losses[-1])
@@ -115,24 +118,28 @@ class ModelBasedRL(object):
                   predicted states and saves these to the experiment's folder. You do not need to modify this code.
         """
         logger.info('Training policy....')
-        ### PROBLEM 1
-        ### YOUR CODE HERE
-        raise NotImplementedError
+        self._train_policy(self._random_dataset)
 
         logger.info('Evaluating predictions...')
         for r_num, (states, actions, _, _, _) in enumerate(self._random_dataset.rollout_iterator()):
             pred_states = []
 
-            ### PROBLEM 1
-            ### YOUR CODE HERE
-            raise NotImplementedError
+            pred_states.append(states[0])
+            for ac in actions:
+                pred_next_state = self._policy.predict(pred_states[-1], ac)
+                pred_states.append(pred_next_state)
+
+
 
             states = np.asarray(states)
             pred_states = np.asarray(pred_states)
 
-            state_dim = states.shape[1]
+            state_dim = int(states.shape[1])
+       
             rows = int(np.sqrt(state_dim))
+
             cols = state_dim // rows
+     
             f, axes = plt.subplots(rows, cols, figsize=(3*cols, 3*rows))
             f.suptitle('Model predictions (red) versus ground truth (black) for open-loop predictions')
             for i, (ax, state_i, pred_state_i) in enumerate(zip(axes.ravel(), states.T, pred_states.T)):
@@ -153,14 +160,12 @@ class ModelBasedRL(object):
         self._log(self._random_dataset)
 
         logger.info('Training policy....')
-        ### PROBLEM 2
-        ### YOUR CODE HERE
-        raise NotImplementedError
+        
+        self._train_policy(self._random_dataset)
 
         logger.info('Evaluating policy...')
-        ### PROBLEM 2
-        ### YOUR CODE HERE
-        raise NotImplementedError
+        
+        eval_dataset = self._gather_rollouts(self._policy, self._num_onpolicy_rollouts)
 
         logger.info('Trained policy')
         self._log(eval_dataset)
