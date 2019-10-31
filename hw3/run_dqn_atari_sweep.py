@@ -112,8 +112,7 @@ def atari_learn(env,
     def stopping_criterion(env, t):
         # notice that here t is the number of steps of the wrapped env,
         # which is different from the number of steps in the underlying env
-        rewards = get_wrapper_by_name(env, "Monitor").get_episode_rewards()
-        return np.mean(rewards[-100:]) > 20 or get_wrapper_by_name(env, "Monitor").get_total_steps() >= 4*num_timesteps
+        return get_wrapper_by_name(env, "Monitor").get_total_steps() >= 4*num_timesteps
 
     exploration_schedule = PiecewiseSchedule(
         [
