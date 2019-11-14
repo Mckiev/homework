@@ -74,7 +74,16 @@ def build_rnn(x, h, output_size, scope, n_layers, size, activation=tf.tanh, outp
     #====================================================================================#
     #                           ----------PROBLEM 2----------
     #====================================================================================#
-    # YOUR CODE HERE
+    input_size = x.get_shape()[2]
+    hist_size = x.get_shape()[1]
+    x = tf.reshape(x, (-1, input_size))
+    x = build_mlp(x, size, scope, n_layers, size, activation=activation, output_activation=activation)
+    x = tf.reshape(x, (-1, hist_size, size))
+    cell = tf.compat.v1.nn.rnn_cell.GRUCell(output_size, activation = activation, reuse = tf.AUTO_REUSE)
+    x, h = tf.nn.dynamic_rnn(cell, x, initial_state = h, scope = scope)
+
+    return x[:,-1,:], h
+
 
 def build_policy(x, h, output_size, scope, n_layers, size, gru_size, recurrent=True, activation=tf.tanh, output_activation=None):
     """
@@ -124,7 +133,9 @@ def build_critic(x, h, output_size, scope, n_layers, size, gru_size, recurrent=T
             x = tf.reshape(x, (-1, x.get_shape()[1]*x.get_shape()[2]))
             x = build_mlp(x, gru_size, scope, n_layers + 1, size, activation=activation, output_activation=activation, regularizer=regularizer)
         x = tf.layers.dense(x, output_size, activation=output_activation, name='decoder', kernel_regularizer=regularizer, bias_regularizer=regularizer)
+    
     return x
+
 
 def pathlength(path):
     return len(path["reward"])
@@ -325,24 +336,39 @@ class Agent(object):
         optimizer = tf.train.AdamOptimizer(self.learning_rate)
         self.policy_update_op = minimize_and_clip(optimizer, self.policy_surr_loss, var_list=self.policy_weights, clip_val=40)
 
-    def sample_trajectories(self, itr, env, min_timesteps, is_evaluation=False):
+        # Counting the number of trainable parameters
+        total_parameters = 0
+        for variable in tf.trainable_variables():
+            # shape is an array of tf.Dimension
+            shape = variable.get_shape()
+            print(shape)
+            print(len(shape))
+            variable_parameters = 1
+            for dim in shape:
+                print(dim)
+                variable_parameters *= dim.value
+            print(variable_parameters)
+            total_parameters += variable_parameters
+        self.num_trainable = total_parameters
+
+    def sample_trajectories(self, itr, env, min_timesteps, is_evaluation=False, gran = 1):
         # Collect paths until we have enough timesteps
         timesteps_this_batch = 0
         stats = []
         while True:
             animate_this_episode=(len(stats)==0 and (itr % 10 == 0) and self.animate)
-            steps, s = self.sample_trajectory(env, animate_this_episode, is_evaluation=is_evaluation)
+            steps, s = self.sample_trajectory(env, animate_this_episode, is_evaluation=is_evaluation, gran)
             stats += s
             timesteps_this_batch += steps
             if timesteps_this_batch > min_timesteps:
                 break
         return stats, timesteps_this_batch
 
-    def sample_trajectory(self, env, animate_this_episode, is_evaluation):
+    def sample_trajectory(self, env, animate_this_episode, is_evaluation, gran):
         """
         sample a task, then sample trajectories from that task until either
         max(self.history, self.max_path_length) timesteps have been sampled
-
+`
         construct meta-observations by concatenating (s, a, r, d) into one vector
         inputs to the policy should have the shape (batch_size, self.history, self.meta_ob_dim)
         zero pad the input to maintain a consistent input shape
@@ -355,7 +381,7 @@ class Agent(object):
             animate_this_episode: if True then render
             val: whether this is training or evaluation
         """
-        env.reset_task(is_evaluation=is_evaluation)
+        env.reset_task(is_evaluation=is_evaluation, gran = gran)
         stats = []
         #====================================================================================#
         #                           ----------PROBLEM 1----------
@@ -376,27 +402,29 @@ class Agent(object):
                 ob = env.reset()
                 # first meta ob has only the observation
                 # set a, r, d to zero, construct first meta observation in meta_obs
-                # YOUR CODE HERE
-
+                a = np.zeros(self.ac_dim)
+                r = np.zeros(self.reward_dim)
+                d = np.zeros(self.terminal_dim)
+                meta_obs[steps + self.history] = np.concatenate((ob, a, r, d))
                 steps += 1
 
             # index into the meta_obs array to get the window that ends with the current timestep
             # please name the windowed observation `in_` for compatibilty with the code that adds to the replay buffer (lines 418, 420)
-            # YOUR CODE HERE
+            in_ = meta_obs[steps: steps + self.history]
 
             hidden = np.zeros((1, self.gru_size), dtype=np.float32)
 
             # get action from the policy
-            # YOUR CODE HERE
+            ac = np.squeeze(self.sess.run(self.sy_sampled_ac, {self.sy_ob_no : [in_], self.sy_hidden : hidden}))
 
             # step the environment
-            # YOUR CODE HERE
+            ob, rew, done, _ = env.step(ac)
 
             ep_steps += 1
 
             done = bool(done) or ep_steps == self.max_path_length
             # construct the meta-observation and add it to meta_obs
-            # YOUR CODE HERE
+            meta_obs[steps + self.history] = np.concatenate((ob, ac, [rew, done]))
 
             rewards.append(rew)
             steps += 1
@@ -599,6 +627,7 @@ def train_PG(
         num_tasks,
         l2reg,
         recurrent,
+        gran
         ):
 
     start = time.time()
@@ -730,7 +759,7 @@ def train_PG(
         print('Validating...')
         val_stats = []
         for _ in range(num_tasks):
-            vs, timesteps_this_batch = agent.sample_trajectories(itr, env, min_timesteps_per_batch // 10, is_evaluation=True)
+            vs, timesteps_this_batch = agent.sample_trajectories(itr, env, min_timesteps_per_batch // 10, is_evaluation=True, gran = gran)
             val_stats += vs
 
         # save trajectories for viz
@@ -753,6 +782,7 @@ def train_PG(
         logz.log_tabular("EpLenStd", np.std(ep_lengths))
         logz.log_tabular("TimestepsThisBatch", timesteps_this_batch)
         logz.log_tabular("TimestepsSoFar", total_timesteps)
+        logz.log_tabular("NumParams", agent.num_trainable)
 
         # Log VAL diagnostics
         val_returns = [sum(s["rewards"]) for s in val_stats]
@@ -765,6 +795,9 @@ def train_PG(
 
 
 def main():
+    tf.compat.v1.logging.set_verbosity(tf.logging.ERROR)
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('env_name', type=str)
@@ -788,6 +821,7 @@ def main():
     parser.add_argument('--history', '-ho', type=int, default=1)
     parser.add_argument('--l2reg', '-reg', action='store_true')
     parser.add_argument('--recurrent', '-rec', action='store_true')
+    parser.add_argument('--gran', '-g', type=int, default=1)
     args = parser.parse_args()
 
     if not(os.path.exists('data')):
@@ -829,6 +863,7 @@ def main():
                 num_tasks=args.num_tasks,
                 l2reg=args.l2reg,
                 recurrent=args.recurrent,
+                gran = args.gran
                 )
         # # Awkward hacky process runs, because Tensorflow does not like
         # # repeatedly calling train_PG in the same thread.

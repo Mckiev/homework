@@ -9,13 +9,13 @@ class PointEnv(Env):
     goals are sampled randomly from a square
     """
 
-    def __init__(self, num_tasks=1):
-        self.reset_task()
+    def __init__(self, num_tasks=1, is_evaluation = False, gran=1):
+        self.reset_task(is_evaluation = is_evaluation, gran=gran)
         self.reset()
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(2,))
         self.action_space = spaces.Box(low=-0.1, high=0.1, shape=(2,))
 
-    def reset_task(self, is_evaluation=False):
+    def reset_task(self, is_evaluation = False, gran=1):
         '''
         sample a new task randomly
 
@@ -26,10 +26,31 @@ class PointEnv(Env):
         #====================================================================================#
         #                           ----------PROBLEM 3----------
         #====================================================================================#
-        # YOUR CODE HERE
         x = np.random.uniform(-10, 10)
         y = np.random.uniform(-10, 10)
+
+        if is_evaluation:
+            while not self.in_eval(x,y,gran):
+                x = np.random.uniform(-10, 10)
+                y = np.random.uniform(-10, 10)
+        else:
+            while self.in_eval(x,y,gran):
+                x = np.random.uniform(-10, 10)
+                y = np.random.uniform(-10, 10)
+
+        
         self._goal = np.array([x, y])
+
+    def in_eval(self, x, y, gran):
+        '''
+        Checks if coordinates (x,y) belong to evaluation set or training set
+        provided the gran level of granularity. The bigger gran the more 
+        dissimilar are sets
+        '''
+        check = x//gran + y//gran
+        return check % 2 == 0
+         
+
 
     def reset(self):
         self._state = np.array([0, 0], dtype=np.float32)
