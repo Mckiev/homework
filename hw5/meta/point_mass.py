@@ -29,16 +29,10 @@ class PointEnv(Env):
         x = np.random.uniform(-10, 10)
         y = np.random.uniform(-10, 10)
 
-        if is_evaluation:
-            while not self.in_eval(x,y,gran):
-                x = np.random.uniform(-10, 10)
-                y = np.random.uniform(-10, 10)
-        else:
-            while self.in_eval(x,y,gran):
-                x = np.random.uniform(-10, 10)
-                y = np.random.uniform(-10, 10)
-
-        
+        while is_evaluation is self.in_eval(x,y,gran):
+            x = np.random.uniform(-10, 10)
+            y = np.random.uniform(-10, 10)
+            
         self._goal = np.array([x, y])
 
     def in_eval(self, x, y, gran):
