@@ -341,13 +341,13 @@ class Agent(object):
         for variable in tf.trainable_variables():
             # shape is an array of tf.Dimension
             shape = variable.get_shape()
-            print(shape)
-            print(len(shape))
+            # print(shape)
+            # print(len(shape))
             variable_parameters = 1
             for dim in shape:
-                print(dim)
+                # print(dim)
                 variable_parameters *= dim.value
-            print(variable_parameters)
+            # print(variable_parameters)
             total_parameters += variable_parameters
         self.num_trainable = total_parameters
 
@@ -357,7 +357,7 @@ class Agent(object):
         stats = []
         while True:
             animate_this_episode=(len(stats)==0 and (itr % 10 == 0) and self.animate)
-            steps, s = self.sample_trajectory(env, animate_this_episode, is_evaluation=is_evaluation, gran)
+            steps, s = self.sample_trajectory(env, animate_this_episode, is_evaluation=is_evaluation, gran = gran)
             stats += s
             timesteps_this_batch += steps
             if timesteps_this_batch > min_timesteps:
