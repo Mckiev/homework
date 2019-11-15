@@ -759,7 +759,7 @@ def train_PG(
         print('Validating...')
         val_stats = []
         for _ in range(num_tasks):
-            vs, timesteps_this_batch = agent.sample_trajectories(itr, env, min_timesteps_per_batch, is_evaluation=True, gran = gran)
+            vs, timesteps_this_batch = agent.sample_trajectories(itr, env, min_timesteps_per_batch // 10, is_evaluation=True, gran = gran)
             val_stats += vs
 
         # save trajectories for viz
