@@ -29,7 +29,7 @@ class PointEnv(Env):
         x = np.random.uniform(-10, 10)
         y = np.random.uniform(-10, 10)
 
-        while is_evaluation is self.in_eval(x,y,gran):
+        while is_evaluation is (x>0):
             x = np.random.uniform(-10, 10)
             y = np.random.uniform(-10, 10)
             
