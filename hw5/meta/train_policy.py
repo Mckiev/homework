@@ -405,7 +405,7 @@ class Agent(object):
                 a = np.zeros(self.ac_dim)
                 r = np.zeros(self.reward_dim)
                 d = np.zeros(self.terminal_dim)
-                meta_obs[steps + self.history] = np.concatenate((ob, a, r, d))
+                meta_obs[steps + self.history - 1] = np.concatenate((ob, a, r, d))
                 steps += 1
 
             # index into the meta_obs array to get the window that ends with the current timestep
