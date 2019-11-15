@@ -79,7 +79,7 @@ def build_rnn(x, h, output_size, scope, n_layers, size, activation=tf.tanh, outp
     x = tf.reshape(x, (-1, input_size))
     x = build_mlp(x, size, scope, n_layers, size, activation=activation, output_activation=activation)
     x = tf.reshape(x, (-1, hist_size, size))
-    cell = tf.compat.v1.nn.rnn_cell.GRUCell(output_size, activation = activation, reuse = tf.AUTO_REUSE)
+    cell = tf.contrib.cudnn_rnn.CudnnGRU(output_size, activation = activation, reuse = tf.AUTO_REUSE)
     x, h = tf.nn.dynamic_rnn(cell, x, initial_state = h, scope = scope)
 
     return x[:,-1,:], h
