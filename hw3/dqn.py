@@ -24,6 +24,20 @@ def setup_logger(logdir, locals_):
   params['exp_name'] = locals_['q_func'].__name__
   logz.save_params(params)
 
+def get_num_params():
+    total_parameters = 0
+    for variable in tf.trainable_variables():
+        
+        shape = variable.get_shape()
+        variable_parameters = 1
+        for dim in shape:
+            variable_parameters *= dim.value
+        print('%d parameters in %s' %(variable_parameters ,variable.name))
+        total_parameters += variable_parameters
+    print('Total : %d'  %total_parameters)
+
+    sys.exit()
+
 class QLearner(object):
 
 
@@ -347,6 +361,7 @@ class QLearner(object):
 
     self.t += 1
 
+
   def log_progress(self):
     episode_rewards = get_wrapper_by_name(self.env, "Monitor").get_episode_rewards()
     episode_lengths = get_wrapper_by_name(self.env, "Monitor").get_episode_lengths()
@@ -358,6 +373,7 @@ class QLearner(object):
       self.best_mean_episode_reward = max(self.best_mean_episode_reward, self.mean_episode_reward)
 
     if self.t % self.log_every_n_steps == 0 and self.model_initialized:
+
       print("Timestep %d, total length %d" % (self.t, np.sum(episode_lengths)))
       print("mean reward (100 episodes) %f" % self.mean_episode_reward)
       print("best mean reward %f" % self.best_mean_episode_reward)
@@ -371,7 +387,7 @@ class QLearner(object):
       with open(self.rew_file, 'wb') as f:
         pickle.dump((episode_rewards, episode_lengths), f, pickle.HIGHEST_PROTOCOL)
 
-
+      
       logz.log_tabular("TotalTime", time.time() - self.start_time)
       logz.log_tabular("Timestep", self.t)
       logz.log_tabular("MeanEpisodeReward", self.mean_episode_reward)
