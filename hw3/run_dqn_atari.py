@@ -256,13 +256,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='def')
     parser.add_argument('--doubleQ', action='store_true')
+    parser.add_argument('--subdir', type=str, default='')
     args = parser.parse_args()
     # Get Atari games.
     task = gym.make('PongNoFrameskip-v4')
     seed = random.randint(0, 9999)
     print('random seed = %d' % seed)
 
-    logdir ='Logz/Atari_' + args.model +'_'+str(seed)+'_'+ time.strftime("%d-%m-%Y_%H-%M-%S")
+    if args.subdir: args.subdir += '/'
+    
+    logdir ='Logz/'+ args.subdir + 'Atari_' + args.model +'_'+str(seed)+'_'+ time.strftime("%d-%m-%Y_%H-%M-%S")
     # Run training
     
     env = get_env(task, seed)
