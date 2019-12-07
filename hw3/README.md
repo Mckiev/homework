@@ -1,5 +1,5 @@
 This is a completed homework number 3 from CS294-112 (2018)
-I have implemented the DQN and Actor-Critic algorithms with the starter code was provided.
+I have implemented the DQN and Actor-Critic algorithms. The starter code was provided.
 The instructions can be seen in HW3.pdf
 My report is in HW3_report.pdf
 
