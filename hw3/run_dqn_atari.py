@@ -12,7 +12,7 @@ import dqn
 from dqn_utils import *
 from atari_wrappers import *
 
-tf.compat.v1.logging.set_verbosity(tf.logging.ERROR)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 def atari_model_def(img_in, num_actions, scope, reuse=False):
@@ -31,7 +31,7 @@ def atari_model_def(img_in, num_actions, scope, reuse=False):
 
         return out
 
-def atari_model_small(img_in, num_actions, scope, reuse=False):
+def atari_model_b(img_in, num_actions, scope, reuse=False):
 
     with tf.variable_scope(scope, reuse=reuse):
         out = img_in
@@ -45,41 +45,13 @@ def atari_model_small(img_in, num_actions, scope, reuse=False):
 
         return out
 
-def atari_model_xsmall(img_in, num_actions, scope, reuse=False):
+def atari_model_m(img_in, num_actions, scope, reuse=False):
 
     with tf.variable_scope(scope, reuse=reuse):
         out = img_in
         with tf.variable_scope("convnet"):
             out = layers.convolution2d(out, num_outputs=16, kernel_size=8, stride=4, activation_fn=tf.nn.relu)
             out = layers.convolution2d(out, num_outputs=32, kernel_size=3, stride=1, activation_fn=tf.nn.relu)
-        out = layers.flatten(out)
-        with tf.variable_scope("action_value"):
-            out = layers.fully_connected(out, num_outputs=256,         activation_fn=tf.nn.relu)
-            out = layers.fully_connected(out, num_outputs=num_actions, activation_fn=None)
-
-        return out
-
-
-def atari_model_xxsmall(img_in, num_actions, scope, reuse=False):
-
-    with tf.variable_scope(scope, reuse=reuse):
-        out = img_in
-        with tf.variable_scope("convnet"):
-            out = layers.convolution2d(out, num_outputs=8, kernel_size=8, stride=4, activation_fn=tf.nn.relu)
-            out = layers.convolution2d(out, num_outputs=16, kernel_size=3, stride=1, activation_fn=tf.nn.relu)
-        out = layers.flatten(out)
-        with tf.variable_scope("action_value"):
-            out = layers.fully_connected(out, num_outputs=128,         activation_fn=tf.nn.relu)
-            out = layers.fully_connected(out, num_outputs=num_actions, activation_fn=None)
-
-        return out
-
-def atari_model_1c(img_in, num_actions, scope, reuse=False):
-
-    with tf.variable_scope(scope, reuse=reuse):
-        out = img_in
-        with tf.variable_scope("convnet"):
-            out = layers.convolution2d(out, num_outputs=32, kernel_size=4, stride=2, activation_fn=tf.nn.relu)
         out = layers.flatten(out)
         with tf.variable_scope("action_value"):
             out = layers.fully_connected(out, num_outputs=256,         activation_fn=tf.nn.relu)
@@ -254,9 +226,10 @@ def get_env(task, seed):
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='def')
-    parser.add_argument('--doubleQ', action='store_true')
-    parser.add_argument('--subdir', type=str, default='')
+    parser.add_argument('--model', type=str, default='def', help = 'Specify which model to use : [def, def256, def128, b, m, s1, s2, s3]')
+    parser.add_argument('--doubleQ', action='store_true', help ='If double Q learning should be used')
+    parser.add_argument('--subdir', type=str, default='', help = 'Specify the name of subdirectory to store the results at.\
+                                                                 Useful for building plots from this directory later')
     args = parser.parse_args()
     # Get Atari games.
     task = gym.make('PongNoFrameskip-v4')

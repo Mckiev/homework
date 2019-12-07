@@ -21,7 +21,7 @@ def setup_logger(logdir, locals_):
   # Log experimental parameters
   args = inspect.getargspec(QLearner)[0]
   params = {k: str(locals_[k]) if k in locals_ else None for k in args}
-  params['exp_name'] = locals_['q_func'].__name__
+  params['exp_name'] = locals_['q_func'].__name__ + locals_['double_q'] * '_doubleQ'
   logz.save_params(params)
 
 def get_num_params():
