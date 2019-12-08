@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 import utils
-tf.compat.v1.logging.set_verbosity(tf.logging.ERROR)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 class ModelBasedPolicy(object):
@@ -148,6 +148,7 @@ class ModelBasedPolicy(object):
                                             minval=self._action_space_low, maxval=self._action_space_high)
             next_states = self._dynamics_func(states, random_acs, True)
             costs += self._cost_fn(states, random_acs, next_states)
+            states = next_states
 
         best_action = first_acs[tf.math.argmin(costs)]
         
@@ -220,4 +221,5 @@ class ModelBasedPolicy(object):
         best_action = self._sess.run(self._best_action, {self._state_ph : [state]})
 
         assert np.shape(best_action) == (self._action_dim,)
+
         return best_action

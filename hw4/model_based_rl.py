@@ -148,7 +148,7 @@ class ModelBasedRL(object):
                 ax.plot(pred_state_i, color='r')
             plt.tight_layout()
             plt.subplots_adjust(top=0.90)
-            f.savefig(os.path.join(logger.dir, 'prediction_{0:03d}.jpg'.format(r_num)), bbox_inches='tight')
+            f.savefig(os.path.join(logger.dir, 'prediction_{0:03d}.jpg'.format(r_num)), bbox_inches='tight', dpi = 300)
 
         logger.info('All plots saved to folder')
 
@@ -186,19 +186,13 @@ class ModelBasedRL(object):
             logger.info('Iteration {0}'.format(itr))
             logger.record_tabular('Itr', itr)
 
-            ### PROBLEM 3
-            ### YOUR CODE HERE
             logger.info('Training policy...')
-            raise NotImplementedError
-
-            ### PROBLEM 3
-            ### YOUR CODE HERE
+            self._train_policy(dataset)
+ 
             logger.info('Gathering rollouts...')
-            raise NotImplementedError
+            new_dataset = self._gather_rollouts(self._policy, self._num_onpolicy_rollouts)
 
-            ### PROBLEM 3
-            ### YOUR CODE HERE
             logger.info('Appending dataset...')
-            raise NotImplementedError
+            dataset.append(new_dataset)
 
             self._log(new_dataset)
