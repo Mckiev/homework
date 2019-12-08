@@ -7,7 +7,7 @@ My report is in [HW3_report.pdf](HW3_report.pdf)
 
 To reproduce the results from the first part of the assignment run p1.sh \
 To make make a sweep of model architectures run : python3 model_sweep.py (should take a while to run) \
-For the second part of the assigment run p2.sh \
+For the second part of the assigment run p2.sh 
 
 
 ### Original Readme 
