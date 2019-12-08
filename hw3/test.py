@@ -1,19 +1,13 @@
-import numpy as np
-import pandas as pd
-import pickle
-import matplotlib.pyplot as plt
-import argparse
+# import plot
+# import sys
+# import matplotlib.pyplot as plt
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('logdir', type=str)
-args = parser.parse_args()
+# data = plot.get_datasets(sys.argv[1])
+
+# print(data['TotalTime'].max()/60)
 
 
-with open(args.logdir, 'rb') as f:
-	returns, lengths = pickle.load(f)
-
-running_av_ret =[np.mean(returns[i:i+100]) for i in range(len(returns)-100)] 
-
-plt.plot(np.cumsum(lengths)[100:],running_av_ret)
-plt.show()
+for _ in range(4):
+    for _ in range(2):
+        print(_)

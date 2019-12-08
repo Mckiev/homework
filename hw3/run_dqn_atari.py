@@ -238,7 +238,7 @@ def main():
 
     if args.subdir: args.subdir += '/'
     
-    logdir ='Logz/'+ args.subdir + 'Atari_' + args.model +'_'+str(seed)+'_'+ time.strftime("%d-%m-%Y_%H-%M-%S")
+    logdir ='Logz/'+ args.subdir + 'Atari_' + args.model +'_' +str(seed)+'_'+ time.strftime("%d-%m-%Y_%H-%M-%S")
     # Run training
     
     env = get_env(task, seed)

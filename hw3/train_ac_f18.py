@@ -290,13 +290,13 @@ class Agent(object):
             acs.append(ac)
             ob, rew, done, _ = env.step(ac)
             # add the observation after taking a step to next_obs
-            # YOUR CODE HERE
+            
             next_obs.append(ob)
             rewards.append(rew)
             steps += 1
             # If the episode ended, the corresponding terminal value is 1
             # otherwise, it is 0
-            # YOUR CODE HERE
+            
             if done or steps > self.max_path_length:
                 terminals.append(1)
                 break

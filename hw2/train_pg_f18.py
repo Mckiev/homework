@@ -224,20 +224,10 @@ class Agent(object):
             sy_logits_na = policy_parameters
             sy_logprob_n = tf.math.log(1e-8 + tf.gather_nd(tf.nn.softmax(logits=sy_logits_na),
                                         tf.stack([tf.range(tf.shape(sy_logits_na)[0]), sy_ac_na], axis=1)))
-
-            sy_neg_logprob_n = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                labels=sy_ac_na, 
-                logits=sy_logits_na
-            )
-
         else:
             sy_mean, sy_logstd = policy_parameters
             mvn = tfp.distributions.MultivariateNormalDiag(loc = sy_mean, scale_diag= tf.math.exp(sy_logstd))
             sy_logprob_n =mvn.log_prob(sy_ac_na)
-
-            sy = (sy_ac_na - sy_mean) / tf.exp(sy_logstd)
-            sy_neg_logprob_n = 0.5 * tf.reduce_sum(sy * sy, axis=1)
-
 
         return sy_logprob_n
 
@@ -332,7 +322,6 @@ class Agent(object):
                 ac = ac[0].item()
             else:
                 ac = ac[0]
-                #ac = np.clip(ac,  env.action_space.low, env.action_space.high)
 
             acs.append(ac)
             ob, rew, done, _ = env.step(ac)
