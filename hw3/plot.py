@@ -60,6 +60,7 @@ def plot_data(data, x = 'Timestep', y="MeanEpisodeReward", hue = "Experiment", s
         g.set_xticklabels(xlabels)
     sns.set(style="darkgrid")
     if savefig:
+        os.makedirs('Figs', exist_ok=True)
         plt.savefig('Figs/'+savefig, dpi=600)
     plt.show()
 

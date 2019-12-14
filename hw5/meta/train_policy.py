@@ -759,7 +759,7 @@ def train_PG(
         print('Validating...')
         val_stats = []
         for _ in range(num_tasks):
-            vs, timesteps_this_batch = agent.sample_trajectories(itr, env, min_timesteps_per_batch // 10, is_evaluation=True, gran = gran)
+            vs, timesteps_this_batch = agent.sample_trajectories(itr, env, min_timesteps_per_batch, is_evaluation=True, gran = gran)
             val_stats += vs
 
         # save trajectories for viz
@@ -809,7 +809,7 @@ def main():
     parser.add_argument('--batch_size', '-pb', type=int, default=10000)
     parser.add_argument('--mini_batch_size', '-mpb', type=int, default=64)
     parser.add_argument('--num_tasks', '-nt', type=int, default=1)
-    parser.add_argument('--ep_len', '-ep', type=int, default=20)
+    parser.add_argument('--ep_len', '-ep', type=int, default=100)
     parser.add_argument('--learning_rate', '-lr', type=float, default=5e-4)
     parser.add_argument('--num_value_iters', '-nvu', type=int, default=1)
     parser.add_argument('--dont_normalize_advantages', '-dna', action='store_true')
