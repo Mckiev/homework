@@ -763,7 +763,7 @@ def train_PG(
             val_stats += vs
 
         # save trajectories for viz
-        f_name = "output/{}-epoch{}.pkl".format(exp_name, itr)
+        f_name = "output/{}/epoch{}.pkl".format(exp_name, itr)
         os.makedirs(os.path.dirname(f_name), exist_ok=True)
         with open(f_name, 'wb') as f:
             pickle.dump(agent.val_replay_buffer.all_batch(), f, pickle.HIGHEST_PROTOCOL)
