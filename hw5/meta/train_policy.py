@@ -151,7 +151,7 @@ def setup_logger(logdir, locals_):
     # Configure output directory for logging
     logz.configure_output_dir(logdir)
     # Log experimental parameters
-    args = inspect.getargspec(train_PG)[0]
+    args = inspect.getfullargspec(train_PG)[0]
     params = {k: locals_[k] if k in locals_ else None for k in args}
     logz.save_params(params)
 
