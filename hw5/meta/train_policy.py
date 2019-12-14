@@ -763,7 +763,9 @@ def train_PG(
             val_stats += vs
 
         # save trajectories for viz
-        with open("output/{}-epoch{}.pkl".format(exp_name, itr), 'wb') as f:
+        f_name = "output/{}-epoch{}.pkl".format(exp_name, itr)
+        os.makedirs(os.path.dirname(f_name), exist_ok=True)
+        with open(f_name, 'wb') as f:
             pickle.dump(agent.val_replay_buffer.all_batch(), f, pickle.HIGHEST_PROTOCOL)
         agent.val_replay_buffer.flush()
 
@@ -783,7 +785,6 @@ def train_PG(
         logz.log_tabular("TimestepsThisBatch", timesteps_this_batch)
         logz.log_tabular("TimestepsSoFar", total_timesteps)
         logz.log_tabular("NumParams", agent.num_trainable)
-
         # Log VAL diagnostics
         val_returns = [sum(s["rewards"]) for s in val_stats]
         val_final_rewards = [s["rewards"][-1] for s in val_stats]
@@ -795,7 +796,7 @@ def train_PG(
 
 
 def main():
-    tf.compat.v1.logging.set_verbosity(tf.logging.ERROR)
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
     import argparse
