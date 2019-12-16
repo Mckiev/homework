@@ -643,7 +643,7 @@ def train_PG(
     #========================================================================================#
 
     # Make the gym environment
-    envs = {'pm-far': FarPointEnv
+    envs = {'pm-far': FarPointEnv,
             'pm': PointEnv,
             'pm-obs': ObservedPointEnv,
             }
