@@ -20,6 +20,7 @@ from multiprocessing import Process
 
 from replay_buffer import ReplayBuffer, PPOReplayBuffer
 
+from point_mass_far import FarPointEnv
 from point_mass import PointEnv
 from point_mass_observed import ObservedPointEnv
 
@@ -642,7 +643,8 @@ def train_PG(
     #========================================================================================#
 
     # Make the gym environment
-    envs = {'pm': PointEnv,
+    envs = {'pm-far': FarPointEnv
+            'pm': PointEnv,
             'pm-obs': ObservedPointEnv,
             }
     env = envs[env_name](num_tasks)
