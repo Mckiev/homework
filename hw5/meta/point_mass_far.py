@@ -74,7 +74,7 @@ class FarPointEnv(Env):
        
         reward = self.reward_function(x, y)
         # check if task is complete
-        done = reward < 1 
+        done = reward > -1 
         # move to next state
         self._state = self._state + action
         ob = self._get_obs()
