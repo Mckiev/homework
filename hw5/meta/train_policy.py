@@ -406,7 +406,7 @@ class Agent(object):
                 a = np.zeros(self.ac_dim)
                 r = np.zeros(self.reward_dim)
                 d = np.zeros(self.terminal_dim)
-                meta_obs[steps + self.history - 1] = np.concatenate((ob, a, r, d))
+                meta_obs[steps + self.history] = np.concatenate((ob, a, r, d))
                 steps += 1
 
             # index into the meta_obs array to get the window that ends with the current timestep
@@ -725,6 +725,17 @@ def train_PG(
 
         # sample trajectories to fill agent's replay buffer
         print("********** Iteration %i ************"%itr)
+        
+        # Validaton statistic is computed before the training one, such that both statistics
+        # are collected using the same agent (before update)
+        # compute validation statistics
+        print('Validating...')
+        val_stats = []
+        for _ in range(num_tasks):
+            vs, timesteps_this_batch = agent.sample_trajectories(itr, env, min_timesteps_per_batch, is_evaluation=True, gran = gran)
+            val_stats += vs
+
+        #collect training data
         stats = []
         for _ in range(num_tasks):
             s, timesteps_this_batch = agent.sample_trajectories(itr, env, min_timesteps_per_batch)
@@ -757,12 +768,7 @@ def train_PG(
 
             agent.update_parameters(ob_no, hidden, ac_na, fixed_log_probs, q_n, adv_n)
 
-        # compute validation statistics
-        print('Validating...')
-        val_stats = []
-        for _ in range(num_tasks):
-            vs, timesteps_this_batch = agent.sample_trajectories(itr, env, min_timesteps_per_batch, is_evaluation=True, gran = gran)
-            val_stats += vs
+        
 
         # save trajectories for viz
         f_name = "output/{}/epoch{}.pkl".format(exp_name, itr)
@@ -811,7 +817,7 @@ def main():
     parser.add_argument('--batch_size', '-pb', type=int, default=10000)
     parser.add_argument('--mini_batch_size', '-mpb', type=int, default=64)
     parser.add_argument('--num_tasks', '-nt', type=int, default=1)
-    parser.add_argument('--ep_len', '-ep', type=int, default=100)
+    parser.add_argument('--ep_len', '-ep', type=int, default=20)
     parser.add_argument('--learning_rate', '-lr', type=float, default=5e-4)
     parser.add_argument('--num_value_iters', '-nvu', type=int, default=1)
     parser.add_argument('--dont_normalize_advantages', '-dna', action='store_true')

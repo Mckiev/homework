@@ -36,8 +36,13 @@ class FarPointEnv(Env):
         x,y = sample()
 
         if is_evaluation:
-            while not self.in_eval(x,y,gran):
-                x,y = sample()
+            # If gran is negative make the goal one particular point 
+            # far from any point from the training set
+            if gran<0:
+                x, y = -10, -10
+            else:
+                while not self.in_eval(x,y,gran):
+                    x,y = sample()
         else:
             while self.in_eval(x,y,gran):
                 x,y = sample()
@@ -51,8 +56,11 @@ class FarPointEnv(Env):
         provided the gran level of granularity. The bigger gran the more 
         dissimilar are sets
         '''
+        gran = int(gran)
+
         check = x//gran + y//gran
         return check % 2 == 0
+
          
 
 
@@ -71,10 +79,11 @@ class FarPointEnv(Env):
         # compute reward, add penalty for large actions instead of clipping them
         x -= self._goal[0]
         y -= self._goal[1]
-       
-        reward = self.reward_function(x, y)
+        # action = np.clip(action, self.action_space.low, self.action_space.high)
+        penalty = 0 if self.reward_function(*action) > -0.5 else -10*self.reward_function(*action)**2
+        reward = self.reward_function(x, y) + penalty
         # check if task is complete
-        done = reward > -1 
+        done = reward > -0.1 
         # move to next state
         self._state = self._state + action
         ob = self._get_obs()
