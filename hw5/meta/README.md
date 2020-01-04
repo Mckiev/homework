@@ -1,4 +1,14 @@
+
 # CS294-112 HW 5c: Meta-Learning
+
+This is a completed homework number 3 from CS294-112 (2018)
+
+The results can be reproduced by running: bash run_all.sh \
+Problem statements : [hw5c_instructions.pdf](hw5c_instructions.pdf) \
+Homework report : [HW5c_report.pdf](HW5c_report.pdf) 
+
+
+### Original Readme 
 
 Dependencies:
  * Python **3.5**
